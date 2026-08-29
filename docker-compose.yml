@@ -96,3 +96,17 @@ services:
       N8N_INSTANCE_AI_SANDBOX_API_URL: http://sandbox-api:8080
       N8N_INSTANCE_AI_SANDBOX_PROVIDER: n8n-sandbox
       N8N_INSTANCE_AI_SANDBOX_API_KEY: ${N8N_INSTANCE_AI_SANDBOX_API_KEY}
+  app:
+    build:
+      context: ./insightops
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./insightops:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+
