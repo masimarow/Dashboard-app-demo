@@ -108,5 +108,6 @@ services:
       - /app/.next
     environment:
       - NODE_ENV=development
+      - NODE_ENV=development
+      - NEXT_PUBLIC_DEMO_MODE=true
     command: npm run dev
-
