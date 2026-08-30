@@ -7,6 +7,8 @@ import { formatDate } from "@/lib/mock-data";
 import { KpiCard } from "./kpi-card";
 import { KpiTrendChart } from "./kpi-trend-chart";
 import { PeriodFilter } from "./period-filter";
+import { getCreativeFatigueStatuses } from "@/lib/creative-fatigue";
+import { CreativeFatigueTable } from "./creative-fatigue-table";
 
 function pctChange(current: number, previous: number) {
   if (previous === 0) return 0;
@@ -46,6 +48,10 @@ export function DashboardClient({ rows }: DashboardClientProps) {
     { label: "CTR", value: pct(current.ctr), delta: pctChange(current.ctr, previous.ctr) },
     { label: "CVR", value: pct(current.cvr), delta: pctChange(current.cvr, previous.cvr) },
   ];
+  const fatigueStatuses = useMemo(
+    () => getCreativeFatigueStatuses(rows, range),
+    [rows, range]
+  );
 
   return (
     <div className="space-y-6">
@@ -74,6 +80,7 @@ export function DashboardClient({ rows }: DashboardClientProps) {
         <KpiTrendChart title="ROASの推移" data={trend} metricKey="roas" format="multiplier" />
         <KpiTrendChart title="CTR/CVRの推移" data={trend} metricKey="ctr" format="percent" />
       </div>
+      <CreativeFatigueTable statuses={fatigueStatuses} />
     </div>
   );
 }
