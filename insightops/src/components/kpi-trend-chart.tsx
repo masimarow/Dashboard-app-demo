@@ -12,18 +12,34 @@ import {
 import { KpiTrendPoint } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+type FormatType = "yen" | "percent" | "multiplier";
+
 interface KpiTrendChartProps {
   title: string;
   data: KpiTrendPoint[];
   metricKey: keyof Omit<KpiTrendPoint, "date">;
-  valueFormatter?: (v: number) => string;
+  format?: FormatType;
+}
+
+// 関数はpropsで受け取らず、コンポーネント内部で定義する
+function formatValue(v: number, format: FormatType): string {
+  switch (format) {
+    case "yen":
+      return `¥${Math.round(v).toLocaleString()}`;
+    case "percent":
+      return `${(v * 100).toFixed(2)}%`;
+    case "multiplier":
+      return `${v.toFixed(2)}x`;
+    default:
+      return v.toLocaleString();
+  }
 }
 
 export function KpiTrendChart({
   title,
   data,
   metricKey,
-  valueFormatter = (v) => v.toLocaleString(),
+  format = "yen",
 }: KpiTrendChartProps) {
   return (
     <Card>
@@ -36,16 +52,16 @@ export function KpiTrendChart({
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis
               dataKey="date"
-              tickFormatter={(d: string) => d.slice(5)} // MM-DD
+              tickFormatter={(d: string) => d.slice(5)}
               fontSize={12}
             />
             <YAxis
               fontSize={12}
-              tickFormatter={(v: number) => valueFormatter(v)}
+              tickFormatter={(v: number) => formatValue(v, format)}
               width={60}
             />
             <Tooltip
-              formatter={(v: number) => valueFormatter(v)}
+              formatter={(v: number) => formatValue(v, format)}
               labelFormatter={(d: string) => d}
             />
             <Line

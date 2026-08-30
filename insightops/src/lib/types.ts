@@ -25,3 +25,6 @@ export interface KpiTrendPoint {
   ctr: number;
   cvr: number;
 }
+
+export type PeriodPreset = "7d" | "30d" | "thisMonth" | "custom";
+export type Granularity = "daily" | "weekly";

@@ -1,4 +1,4 @@
-import { DailyInsight, KpiSummary, KpiTrendPoint } from "./types";
+import { DailyInsight, KpiSummary, KpiTrendPoint, PeriodPreset, Granularity } from "./types";
 
 function toSummary(rows: DailyInsight[]): KpiSummary {
   const spend = rows.reduce((sum, r) => sum + r.spend, 0);
@@ -16,49 +16,87 @@ function toSummary(rows: DailyInsight[]): KpiSummary {
   };
 }
 
-function filterByRange(rows: DailyInsight[], start: Date, end: Date) {
+export function filterByRange(rows: DailyInsight[], start: Date, end: Date) {
   return rows.filter((r) => {
     const d = new Date(r.date);
-    return d >= start && d < end;
+    return d >= start && d <= end;
   });
 }
 
-/**
- * 直近periodDays日の実績と、その直前periodDays日(前期間)を比較するサマリーを返す。
- */
-export function getKpiComparison(rows: DailyInsight[], periodDays = 30) {
-  const now = new Date();
-  const currentStart = new Date(now);
-  currentStart.setDate(now.getDate() - periodDays);
-
-  const previousStart = new Date(currentStart);
-  previousStart.setDate(currentStart.getDate() - periodDays);
-
-  const current = toSummary(filterByRange(rows, currentStart, now));
-  const previous = toSummary(filterByRange(rows, previousStart, currentStart));
-
-  return { current, previous };
+export interface PeriodRange {
+  start: Date;
+  end: Date;
+  previousStart: Date;
+  previousEnd: Date;
 }
 
 /**
- * 日次のKPI推移(グラフ用)。同一日付の複数クリエイティブを合算する。
+ * プリセット/カスタム指定から当期間・前期間(同じ長さの直前区間)のDateレンジを算出する。
  */
-export function getDailyTrend(rows: DailyInsight[], days = 30): KpiTrendPoint[] {
+export function resolvePeriodRange(
+  preset: PeriodPreset,
+  customStart?: string,
+  customEnd?: string
+): PeriodRange {
   const now = new Date();
-  const start = new Date(now);
-  start.setDate(now.getDate() - days);
+  let start: Date;
+  let end: Date = now;
 
-  const byDate = new Map<string, DailyInsight[]>();
-  for (const r of filterByRange(rows, start, now)) {
-    const arr = byDate.get(r.date) ?? [];
-    arr.push(r);
-    byDate.set(r.date, arr);
+  if (preset === "7d") {
+    start = new Date(now);
+    start.setDate(now.getDate() - 7);
+  } else if (preset === "30d") {
+    start = new Date(now);
+    start.setDate(now.getDate() - 30);
+  } else if (preset === "thisMonth") {
+    start = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else {
+    // custom
+    start = customStart ? new Date(customStart) : new Date(now.setDate(now.getDate() - 30));
+    end = customEnd ? new Date(customEnd) : now;
   }
 
-  return Array.from(byDate.entries())
+  const periodMs = end.getTime() - start.getTime();
+  const previousEnd = new Date(start.getTime() - 1); // 当期間の開始日と重複しないよう1ms前
+  const previousStart = new Date(start.getTime() - periodMs);
+
+  return { start, end, previousStart, previousEnd };
+}
+
+export function getKpiComparison(rows: DailyInsight[], range: PeriodRange) {
+  const current = toSummary(filterByRange(rows, range.start, range.end));
+  const previous = toSummary(filterByRange(rows, range.previousStart, range.previousEnd));
+  return { current, previous };
+}
+
+function getWeekKey(dateStr: string): string {
+  const d = new Date(dateStr);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // 月曜始まり
+  const monday = new Date(d);
+  monday.setDate(diff);
+  return monday.toISOString().slice(0, 10);
+}
+
+/**
+ * 指定レンジ・粒度でのKPI推移を返す。weeklyの場合は月曜始まりで合算する。
+ */
+export function getTrend(
+  rows: DailyInsight[],
+  range: PeriodRange,
+  granularity: Granularity
+): KpiTrendPoint[] {
+  const filtered = filterByRange(rows, range.start, range.end);
+
+  const bucketed = new Map<string, DailyInsight[]>();
+  for (const r of filtered) {
+    const key = granularity === "weekly" ? getWeekKey(r.date) : r.date;
+    const arr = bucketed.get(key) ?? [];
+    arr.push(r);
+    bucketed.set(key, arr);
+  }
+
+  return Array.from(bucketed.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, dayRows]) => {
-      const s = toSummary(dayRows);
-      return { date, ...s };
-    });
+    .map(([date, dayRows]) => ({ date, ...toSummary(dayRows) }));
 }

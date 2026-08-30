@@ -4,7 +4,7 @@ function randomBetween(min: number, max: number) {
   return Math.random() * (max - min) + min;
 }
 
-function formatDate(d: Date) {
+export function formatDate(d: Date) {
   return d.toISOString().slice(0, 10);
 }
 
