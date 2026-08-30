@@ -108,9 +108,11 @@ services:
       - /app/.next
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_DEMO_MODE=true
+      # true: モックデータ表示(デフォルト) / false: 実データ(Meta API連携後に使用)
+      - NEXT_PUBLIC_DEMO_MODE=false
       - DIFY_API_KEY=${DIFY_API_KEY}
       - DIFY_API_BASE_URL=${DIFY_API_BASE_URL}
+      - DATABASE_URL=postgresql://insightops:insightops@db:5432/insightops
     command: npm run dev
     depends_on:
       - db
