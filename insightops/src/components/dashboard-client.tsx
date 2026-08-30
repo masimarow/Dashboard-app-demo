@@ -9,6 +9,10 @@ import { KpiTrendChart } from "./kpi-trend-chart";
 import { PeriodFilter } from "./period-filter";
 import { getCreativeFatigueStatuses } from "@/lib/creative-fatigue";
 import { CreativeFatigueTable } from "./creative-fatigue-table";
+import { buildPeriodLabel } from "@/lib/metrics";
+import { AiInsightPanel } from "./ai-insight-panel";
+import { DifyAnalysisInput } from "@/lib/dify-client";
+
 
 function pctChange(current: number, previous: number) {
   if (previous === 0) return 0;
@@ -52,6 +56,12 @@ export function DashboardClient({ rows }: DashboardClientProps) {
     () => getCreativeFatigueStatuses(rows, range),
     [rows, range]
   );
+  const buildDifyInput = (): DifyAnalysisInput => ({
+    periodLabel: buildPeriodLabel(preset, range),
+    kpiCurrent: current,
+    kpiPrevious: previous,
+    fatiguedCreatives: fatigueStatuses,
+  });
 
   return (
     <div className="space-y-6">
@@ -81,6 +91,7 @@ export function DashboardClient({ rows }: DashboardClientProps) {
         <KpiTrendChart title="CTR/CVRの推移" data={trend} metricKey="ctr" format="percent" />
       </div>
       <CreativeFatigueTable statuses={fatigueStatuses} />
+      <AiInsightPanel buildInput={buildDifyInput} />
     </div>
   );
 }

@@ -100,3 +100,14 @@ export function getTrend(
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, dayRows]) => ({ date, ...toSummary(dayRows) }));
 }
+
+export function buildPeriodLabel(preset: PeriodPreset, range: PeriodRange): string {
+  const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, "/");
+  const presetLabels: Record<PeriodPreset, string> = {
+    "7d": "直近7日",
+    "30d": "直近30日",
+    thisMonth: "今月",
+    custom: "指定期間",
+  };
+  return `${presetLabels[preset]}(${fmt(range.start)}〜${fmt(range.end)})`;
+}

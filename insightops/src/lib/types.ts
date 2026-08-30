@@ -28,3 +28,10 @@ export interface KpiTrendPoint {
 
 export type PeriodPreset = "7d" | "30d" | "thisMonth" | "custom";
 export type Granularity = "daily" | "weekly";
+
+
+export interface DifyAnalysisResult {
+  markdown: string;
+  generatedAt: string;
+  fromCache: boolean;
+}
